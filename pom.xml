@@ -11,6 +11,7 @@
     <properties>
         <!-- maven compiler -->
         <maven-compiler.version>3.2</maven-compiler.version>
+        <maven-surefire.version>2.12.4</maven-surefire.version>
         <java.version>1.8</java.version>
         <file_encoding>UTF-8</file_encoding>
         <surefire.test.skip>true</surefire.test.skip>
@@ -32,32 +33,12 @@
             <url>https://github.com/tomoncle</url>
         </developer>
     </developers>
-    <repositories>
-        <repository>
-            <!--  tomoncle's private maven releases repository.  -->
-            <id>tomoncle repository</id>
-            <name>tomoncle Repositories</name>
-            <url>https://github.com/tomoncle/m2/raw/master/repository/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <!--  snapshots repository.  -->
-            <id>tomoncle snapshots</id>
-            <name>tomoncle snapshots Repositories</name>
-            <url>https://github.com/tomoncle/m2/raw/master/snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+
+    <!--
+       ************
+       * 依赖 *
+       ************
+   -->
     <dependencies>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -89,16 +70,18 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <!--<version>${maven-compiler.version}</version>-->
+                <version>${maven-compiler.version}</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                     <showWarnings>true</showWarnings>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire.version}</version>
                 <configuration>
                     <skipTests>${surefire.test.skip}</skipTests>
                 </configuration>
