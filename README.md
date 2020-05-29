@@ -44,43 +44,71 @@
 
 * GET请求
 ```java
-String request = Requests.GET.request("https://www.baidu.com");
+public class TestRequests {
+
+    @Test
+    public void get() throws IOException {
+        String request = Requests.GET.request("https://www.baidu.com");
+        assert request != null;
+    }
+}
 ```
 
 * POST请求
 ```java
-String url="https://blog.csdn.net/king_aric/article/details/81023887";
-// set header
-Map<String, String> header = new HashMap<>();
-header.put("Cookies", "abc");
-// set body
-Requests.BodyMap bodyMap = new Requests.BodyMap();
-bodyMap.put("username", "tomoncle");
-// return json or text
-String request = Requests.POST.request(url, bodyMap, Headers.of(header));
-assert request != null;
-// return Response
-Response response = Requests.POST.response(url, bodyMap, Headers.of(header));
-assert response.code() == 200;
-response.close();
+public class TestRequests {
+
+    @Test
+    public void post() throws IOException {
+        String url = "https://blog.csdn.net/king_aric/article/details/81023887";
+        // set header
+        Map<String, String> header = new HashMap<>();
+        header.put("Cookies", "abc");
+        // set body
+        Requests.BodyMap bodyMap = new Requests.BodyMap();
+        bodyMap.put("username", "tomoncle");
+        // return json or text
+        String request = Requests.POST.request(url, bodyMap, Headers.of(header));
+        assert request != null;
+        // return Response
+        Response response = Requests.POST.response(url, bodyMap, Headers.of(header));
+        assert response.code() == 200;
+        response.close();
+    }
+
+}
 ```
 
 * 对于非受信任的https资源
 ```java
-// 开启非受信证书
-Requests.enableSSL();
-// 自动关闭资源
-try (Response response = Requests.GET.response("https://172.16.110.125:6443")) {
-    assert response.code() != 200;
-}
+public class TestRequests {
+
+    @Test
+    public void untrustedCertificate() throws IOException {
+        // 开启非受信证书
+        Requests.enableSSL();
+        // auto close
+        try (Response response = Requests.GET.response("https://172.16.110.125:6443")) {
+            assert response.code() != 200;
+        }
+    }
+    
+ }
 ```
 
 * 对于Json处理
 ```java
-Requests.enableSSL();
-String request = Requests.GET.request("https://172.16.110.125:6443");
-JSONObject jsonObject=JSONObject.parseObject(request);
-assert Objects.equals(jsonObject.getString("reason"), "Unauthorized");
+public class TestRequests {
+
+    @Test
+    public void json() throws IOException {
+        Requests.enableSSL();
+        String request = Requests.GET.request("https://172.16.110.125:6443");
+        JSONObject jsonObject=JSONObject.parseObject(request);
+        assert Objects.equals(jsonObject.getString("reason"), "Unauthorized");
+    }
+    
+}
 ```
 
 * 支持：`GET`, `POST`, `HEAD`, `DELETE`, `PUT`, `PATCH`
