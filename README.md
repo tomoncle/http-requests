@@ -1,88 +1,109 @@
 # 简单的 Java http 工具类
 
 # 安装
+
 * 1.在项目pom.xml添加仓库
-```xml 
- <repositories>
-        <repository>
-            <!--  tomoncle's private maven releases repository.  -->
-            <id>tomoncle repository</id>
-            <name>tomoncle Repositories</name>
-            <url>https://github.com/tomoncle/m2/raw/master/repository/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <!--  snapshots repository.  -->
-            <id>tomoncle snapshots</id>
-            <name>tomoncle snapshots Repositories</name>
-            <url>https://github.com/tomoncle/m2/raw/master/snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+
+```xml
+<repositories>
+    <repository>
+        <id>github</id>
+        <name>github Repositories</name>
+        <url>https://tomoncle.github.io/maven/repository</url>
+    </repository>
+</repositories>
 ```
 
 * 2.引入依赖
+
 ```xml
- <dependency>
-    <groupId>tomoncle.github.io</groupId>
+<dependency>
+    <groupId>io.github.tomoncle</groupId>
     <artifactId>http-requests</artifactId>
     <version>1.0.0</version>
- </dependency>
+</dependency>
 ```
 
 # 使用
 
 * GET请求
+
 ```java
-String request = Requests.GET.request("https://www.baidu.com");
+public class TestRequests {
+    @SneakyThrows
+    @Test
+    public void get() {
+        String request = Requests.GET.request("https://www.baidu.com");
+        assert request != null;
+    }
+}
 ```
 
 * POST请求
+
 ```java
-String url="https://blog.csdn.net/king_aric/article/details/81023887";
-// set header
-Map<String, String> header = new HashMap<>();
-header.put("Cookies", "abc");
-// set body
-Requests.BodyMap bodyMap = new Requests.BodyMap();
-bodyMap.put("username", "tomoncle");
-// return json or text
-String request = Requests.POST.request(url, bodyMap, Headers.of(header));
-assert request != null;
-// return Response
-Response response = Requests.POST.response(url, bodyMap, Headers.of(header));
-assert response.code() == 200;
-response.close();
+public class TestRequests {
+    @SneakyThrows
+    @Test
+    public void post() {
+        String url = "https://api.tomoncle.com/post";
+        // set header
+        Map<String, String> header = new HashMap<>();
+        header.put("Cookies", "abc");
+        // set body
+        HttpMap bodyMap = HttpMap.builder(DataType.FORM)
+                .set("username", "tomoncle")
+                .build();
+        // return json or text
+        String request = Requests.POST.request(url, bodyMap, Headers.of(header));
+        assert request != null;
+        // return Response
+        Response response = Requests.POST.response(url, bodyMap, Headers.of(header));
+        assert response.code() == 200;
+        response.close();
+    }
+
+}
 ```
 
-* 对于非受信任的https资源
+* 上传文件
+
 ```java
-// 开启非受信证书
-Requests.enableSSL();
-// 自动关闭资源
-try (Response response = Requests.GET.response("https://172.16.110.125:6443")) {
-    assert response.code() != 200;
+public class TestRequests {
+
+    @Test
+    @SneakyThrows
+    public void testUpload() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("token", "123456");
+
+        Map<String, String> data = new HashMap<>();
+        data.put("user1", "tom");
+        data.put("user2", "jack");
+
+        Requests.POST.upload(
+                "https://api.tomoncle.com/fileUpload",
+                "/tmp/__diesel_schema_migrations.png",
+                data,
+                headers);
+    }
+
 }
 ```
 
 * 对于Json处理
+
 ```java
-Requests.enableSSL();
-String request = Requests.GET.request("https://172.16.110.125:6443");
-JSONObject jsonObject=JSONObject.parseObject(request);
-assert Objects.equals(jsonObject.getString("reason"), "Unauthorized");
+public class TestRequests {
+    @SneakyThrows
+    @Test
+    public void json() {
+        String request = Requests.GET.request("https://api.tomoncle.com");
+        JSONObject jsonObject = JSONObject.parseObject(request);
+        assert Objects.equals(jsonObject.getString("code"), "200");
+    }
+
+}
 ```
 
 * 支持：`GET`, `POST`, `HEAD`, `DELETE`, `PUT`, `PATCH`
-
-* 暂不支持：文件上传

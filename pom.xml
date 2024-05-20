@@ -1,104 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>tomoncle.github.io</groupId>
+    <groupId>io.github.tomoncle</groupId>
     <artifactId>http-requests</artifactId>
     <version>1.0.0</version>
 
     <properties>
-        <!-- maven compiler -->
         <maven-compiler.version>3.2</maven-compiler.version>
+        <maven-surefire.version>2.12.4</maven-surefire.version>
         <java.version>1.8</java.version>
         <file_encoding>UTF-8</file_encoding>
         <surefire.test.skip>true</surefire.test.skip>
         <updateReleaseInfo>true</updateReleaseInfo>
         <project.build.sourceEncoding>${file_encoding}</project.build.sourceEncoding>
     </properties>
-    <!--
-       ************
-       * 开发者信息 *
-       ************
-       -->
     <developers>
         <developer>
             <id>tomoncle</id>
             <name>tomoncle</name>
             <email>tomoncle@sina.com</email>
-            <organization>tomoncle.com</organization>
-            <organizationUrl>http://www.tomoncle.com</organizationUrl>
+            <organization>tomoncleshare</organization>
+            <organizationUrl>https://www.tomoncle.com</organizationUrl>
             <url>https://github.com/tomoncle</url>
         </developer>
     </developers>
-    <repositories>
-        <repository>
-            <!--  tomoncle's private maven releases repository.  -->
-            <id>tomoncle repository</id>
-            <name>tomoncle Repositories</name>
-            <url>https://github.com/tomoncle/m2/raw/master/repository/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <!--  snapshots repository.  -->
-            <id>tomoncle snapshots</id>
-            <name>tomoncle snapshots Repositories</name>
-            <url>https://github.com/tomoncle/m2/raw/master/snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
     <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.33</version>
+        </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>3.9.0</version>
+            <version>4.12.0</version>
         </dependency>
-        <!--import javax.annotation.Nullable-->
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <version>3.0.0</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.2.36</version>
+            <version>1.2.83</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <!--<version>${maven-compiler.version}</version>-->
+                <version>${maven-compiler.version}</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                     <showWarnings>true</showWarnings>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire.version}</version>
                 <configuration>
                     <skipTests>${surefire.test.skip}</skipTests>
                 </configuration>

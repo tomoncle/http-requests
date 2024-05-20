@@ -16,8 +16,9 @@
 
 package io.github.tomoncle.http.test;
 
-import com.alibaba.fastjson.JSONObject;
 import io.github.tomoncle.http.Requests;
+import io.github.tomoncle.http.domain.DataType;
+import io.github.tomoncle.http.domain.HttpMap;
 import okhttp3.Headers;
 import okhttp3.Response;
 import org.junit.Test;
@@ -25,7 +26,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author tomoncle
@@ -40,13 +40,14 @@ public class TestRequests {
 
     @Test
     public void post() throws IOException {
-        String url = "https://blog.csdn.net/king_aric/article/details/81023887";
+        String url = "https://api.tomoncle.com/post";
         // set header
         Map<String, String> header = new HashMap<>();
         header.put("Cookies", "abc");
         // set body
-        Requests.BodyMap bodyMap = new Requests.BodyMap();
-        bodyMap.put("username", "tomoncle");
+        HttpMap bodyMap = HttpMap.builder(DataType.FORM)
+                .set("username", "tomoncle")
+                .build();
         // return json or text
         String request = Requests.POST.request(url, bodyMap, Headers.of(header));
         assert request != null;
@@ -55,21 +56,5 @@ public class TestRequests {
         assert response.code() == 200;
         response.close();
     }
-
-
-    @Test
-    public void untrustedCertificate() throws IOException {
-        // 开启非受信证书
-        Requests.enableSSL();
-        // auto close
-        try (Response response = Requests.GET.response("https://172.16.110.125:6443")) {
-            assert response.code() != 200;
-        }
-
-        String request = Requests.GET.request("https://172.16.110.125:6443");
-        JSONObject jsonObject = JSONObject.parseObject(request);
-        assert Objects.equals(jsonObject.getString("reason"), "Unauthorized");
-    }
-
 
 }
