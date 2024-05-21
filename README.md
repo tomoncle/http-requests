@@ -1,5 +1,7 @@
 # 简单的 Java http 工具类
 
+[![Maven Package](https://github.com/tomoncle/http-requests/actions/workflows/maven-publish.yml/badge.svg)](https://github.com/tomoncle/http-requests/actions/workflows/maven-publish.yml)
+
 # 安装
 
 * 1.在项目pom.xml添加仓库

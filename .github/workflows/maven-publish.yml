@@ -20,5 +20,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
           GITHUB_USER: ${{ secrets.USER }}
         run: |
-          docker run --rm -e GITHUB_TOKEN=${GITHUB_TOKEN} -e GITHUB_USER=${GITHUB_USER} -e REPO_NAME=http-requests tomoncle/github-workflow /build/startup.sh
+          docker run --rm -e GITHUB_TOKEN=${GITHUB_TOKEN} -e GITHUB_USER=${GITHUB_USER} -v `pwd`:/build/src tomoncle/github-workflow /build/startup.sh
           docker rmi tomoncle/github-workflow
