@@ -28,11 +28,14 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static okhttp3.MediaType.parse;
 
@@ -51,13 +54,13 @@ import static okhttp3.MediaType.parse;
 public final class Requests {
     public static final Headers HEADERS = new Headers.Builder().build();
     public static final MediaType JSON = parse("application/json; charset=utf-8");
-    public static final MediaType FORM = parse("application/x-www-form-urlencoded");
+    public static final MediaType FORM_DATA = MediaType.parse("multipart/form-data");
     public static final MediaType OCTET_STREAM = parse("application/octet-stream");
     public static final MediaType MIXED = MediaType.parse("multipart/mixed");
     public static final MediaType ALTERNATIVE = MediaType.parse("multipart/alternative");
     public static final MediaType DIGEST = MediaType.parse("multipart/digest");
     public static final MediaType PARALLEL = MediaType.parse("multipart/parallel");
-    public static final MediaType FORM_DATA = MediaType.parse("multipart/form-data");
+    public static final MediaType FORM = parse("application/x-www-form-urlencoded");
     public static final Get GET = new Get();
     public static final Post POST = new Post();
     public static final Put PUT = new Put();
@@ -65,14 +68,44 @@ public final class Requests {
     public static final Delete DELETE = new Delete();
     public static final Head HEAD = new Head();
     private static final Logger logger = LoggerFactory.getLogger(Requests.class);
-    private static final OkHttpClient client = initClient(false);
-    private static final OkHttpClient sslClient = initClient(true);
+    private static OkHttpClient client = initClient();
 
     private Requests() {
     }
 
     private static OkHttpClient getClient(String url) {
-        return Objects.requireNonNull(url).toLowerCase().startsWith("https") ? sslClient : client;
+        return client;
+    }
+
+    public static void initClient(OkHttpClient okHttpClient) {
+        assert Objects.nonNull(okHttpClient);
+        client = okHttpClient;
+    }
+
+    private static OkHttpClient initClient() {
+        HostnameVerifier hostnameVerifier = (s, sslSession) -> true;
+        TrustManager[] trustManagers = new TrustManager[]{x509TrustManager()};
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder()
+                // 配置连接池
+                .connectionPool(new ConnectionPool(10, 60L, TimeUnit.MINUTES))
+                // .callTimeout(0, TimeUnit.SECONDS)         //完整请求超时时长，从发起到接收返回数据，默认值0，不限定
+                .connectTimeout(60, TimeUnit.SECONDS)//与服务器建立连接的时长，默认10s
+                .readTimeout(3600, TimeUnit.SECONDS) //读取服务器返回数据的时长
+                .writeTimeout(3600, TimeUnit.SECONDS)//向服务器写入数据的时长，默认10s
+                .retryOnConnectionFailure(true)  //失败重连
+                .followRedirects(false)          //重定向
+                .addInterceptor(new RequestsInterceptor());
+        try {
+            // 配置SSL证书
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustManagers, new SecureRandom());
+            builder.sslSocketFactory(sslContext.getSocketFactory(), x509TrustManager())
+                    .hostnameVerifier(hostnameVerifier);
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+            logger.error("配置SSL证书失败! " + e);
+        }
+        return builder.build();
     }
 
     private static X509TrustManager x509TrustManager() {
@@ -92,28 +125,9 @@ public final class Requests {
         };
     }
 
-    private static OkHttpClient initClient(boolean ssl) {
-        if (!ssl) {
-            return new OkHttpClient().newBuilder().addInterceptor(new RequestsInterceptor()).build();
-        }
-        HostnameVerifier hostnameVerifier = (s, sslSession) -> true;
-        TrustManager[] trustManagers = new TrustManager[]{x509TrustManager()};
-        try {
-            SSLContext sslContext = SSLContext.getInstance("SSL");
-            sslContext.init(null, trustManagers, new SecureRandom());
-            return new OkHttpClient().newBuilder().sslSocketFactory(sslContext.getSocketFactory(), x509TrustManager())//配置
-                    .hostnameVerifier(hostnameVerifier)//配置
-                    .addInterceptor(new RequestsInterceptor()).build();
-        } catch (GeneralSecurityException e) {
-            logger.error(e.getMessage());
-        }
-        return null;
-    }
-
     private static Headers buildHeaders(Headers headers) {
         return null == headers ? Requests.HEADERS : headers;
     }
-
 
     private static Request.Builder requestBuilder(String url, Headers headers) {
         return new Request.Builder().url(url).headers(buildHeaders(headers));
@@ -195,6 +209,10 @@ public final class Requests {
         @Override
         public Response response(String url, byte[] bytes, Headers headers) throws IOException {
             return getClient(url).newCall(requestBuilder(url, headers).put(RequestBody.create(bytes, OCTET_STREAM)).build()).execute();
+        }
+
+        public Response upload(String url, String filePath, Headers headers) throws IOException {
+            return getClient(url).newCall(requestBuilder(url, headers).put(RequestBody.create(Files.readAllBytes(Paths.get(filePath)))).build()).execute();
         }
     }
 

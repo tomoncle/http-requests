@@ -53,10 +53,9 @@ class RequestsInterceptor implements Interceptor {
         try {
             response = chain.proceed(request);
         } catch (Exception e) {
-            logger.error("HTTP request failed: {}", e.getMessage());
+            logger.error("HTTP request failed: " + e);
             throw e;
         }
-
         long endTime = System.currentTimeMillis();
         long duration = endTime - startTime;
         this.logResponse(requestId, response, duration);
@@ -70,7 +69,7 @@ class RequestsInterceptor implements Interceptor {
         if (obj.toString().indexOf('\n') == -1) {
             return obj.toString();
         }
-        return "\n" + obj;
+        return ("\n" + obj).replaceAll("\n+$", "");
     }
 
     private void logRequest(String requestId, Request request) {
@@ -84,10 +83,13 @@ class RequestsInterceptor implements Interceptor {
         if (Objects.nonNull(response.body()) && response.body().contentLength() > 0) {
             contentLength = response.body().contentLength();
         }
-        ResponseBody responseBody = response.peekBody(contentLength);
-        logger.debug("<--- {} : Response Code   : {} {} ({} ms, {} bytes)", requestId, response.code(), response.message(), duration, contentLength);
-        logger.debug("<--- {} : Response Header : {}", requestId, this.format_value(response.headers()));
-        logger.debug("<--- {} : Response Body   : {}", requestId, this.format_value(responseBodyToString(responseBody)));
+        try (ResponseBody responseBody = response.peekBody(contentLength)) {
+            logger.debug("<--- {} : Response Code   : {} {} ({} ms, {} bytes)", requestId, response.code(), response.message(), duration, contentLength);
+            logger.debug("<--- {} : Response Header : {}", requestId, this.format_value(response.headers()));
+            logger.debug("<--- {} : Response Body   : {}", requestId, this.format_value(responseBodyToString(responseBody)));
+        } catch (IOException e) {
+            logger.error("解析响应值失败!" + e);
+        }
     }
 
     private String requestBodyToString(Request request) {
@@ -96,8 +98,11 @@ class RequestsInterceptor implements Interceptor {
             if (Objects.isNull(body)) {
                 return "";
             }
-            if (Objects.nonNull(body.contentType()) &&
-                    Objects.requireNonNull(body.contentType()).toString().startsWith("multipart/form-data; boundary=")) {
+            MediaType mediaType = body.contentType();
+            if (Objects.nonNull(mediaType) && (
+                    mediaType.toString().startsWith("multipart/form-data; boundary=")
+                            || mediaType.toString().startsWith("application/octet-stream")
+            )) {
                 return "Ignore Content-Type: " + body.contentType();
             }
             Buffer buffer = new Buffer();
@@ -110,8 +115,17 @@ class RequestsInterceptor implements Interceptor {
 
     private String responseBodyToString(ResponseBody responseBody) {
         try {
-            return responseBody.string();
+            MediaType mediaType = responseBody.contentType();
+            if (Objects.nonNull(mediaType) && (
+                    mediaType.toString().startsWith("application/json")
+                            || mediaType.toString().startsWith("application/xml")
+                            || mediaType.toString().startsWith("text/")
+            )) {
+                return responseBody.string();
+            }
+            return "Ignore Content-Type: " + responseBody.contentType();
         } catch (IOException e) {
+            e.printStackTrace();
             return "Failed to read response body";
         }
     }
