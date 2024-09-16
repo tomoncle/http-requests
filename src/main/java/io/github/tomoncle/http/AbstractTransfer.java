@@ -16,8 +16,9 @@
 
 package io.github.tomoncle.http;
 
-import io.github.tomoncle.http.domain.HttpMap;
+import io.github.tomoncle.http.domain.RequestData;
 import okhttp3.Headers;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
@@ -35,25 +36,36 @@ import java.io.IOException;
  * @since JDK1.8
  */
 abstract class AbstractTransfer extends AbstractBasic {
-    public @Nullable String request(String url, HttpMap map) throws IOException {
-        try (ResponseBody body = response(url, map).body()) {
-            return body != null ? body.string() : null;
+    public @Nullable String request(String url, RequestData requestData) throws IOException {
+        try (Response response = this.response(url, requestData); ResponseBody body = response.body()) {
+            return body != null ? body.string() : "";
         }
     }
 
-    public @Nullable String request(String url, HttpMap map, Headers headers) throws IOException {
-        try (ResponseBody body = response(url, map, headers).body()) {
-            return body != null ? body.string() : null;
+    public @Nullable String request(String url, RequestData requestData, Headers headers) throws IOException {
+        try (Response response = this.response(url, requestData, headers); ResponseBody body = response.body()) {
+            return body != null ? body.string() : "";
         }
     }
 
-    public Response response(String url, HttpMap map, Headers headers) throws IOException {
-        return method(url, map, headers);
+    public Response response(String url, RequestData requestData, Headers headers) throws IOException {
+        return method(url, requestData, headers);
     }
 
-    public Response response(String url, HttpMap map) throws IOException {
-        return response(url, map, null);
+    public Response response(String url, RequestData requestData) throws IOException {
+        return response(url, requestData, null);
     }
 
+    public Response response(String url, RequestBody requestBody, Headers headers) throws IOException {
+        return method(url, requestBody, headers);
+    }
+
+    public Response response(String url, RequestBody requestBody) throws IOException {
+        return response(url, requestBody, null);
+    }
+
+    Response method(String url, RequestData requestData, Headers headers) throws IOException {
+        return method(url, requestData.toRequestBody(), headers);
+    }
 
 }

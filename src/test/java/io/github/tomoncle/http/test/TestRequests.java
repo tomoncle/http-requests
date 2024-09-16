@@ -18,7 +18,7 @@ package io.github.tomoncle.http.test;
 
 import io.github.tomoncle.http.Requests;
 import io.github.tomoncle.http.domain.DataType;
-import io.github.tomoncle.http.domain.HttpMap;
+import io.github.tomoncle.http.domain.RequestData;
 import okhttp3.Headers;
 import okhttp3.Response;
 import org.junit.Test;
@@ -45,8 +45,8 @@ public class TestRequests {
         Map<String, String> header = new HashMap<>();
         header.put("Cookies", "abc");
         // set body
-        HttpMap bodyMap = HttpMap.builder(DataType.FORM)
-                .set("username", "tomoncle")
+        RequestData bodyMap = RequestData.builder(DataType.FORM)
+                .setParam("username", "tomoncle")
                 .build();
         // return json or text
         String request = Requests.POST.request(url, bodyMap, Headers.of(header));

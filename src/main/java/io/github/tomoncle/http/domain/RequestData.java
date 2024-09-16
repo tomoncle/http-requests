@@ -17,6 +17,12 @@
 package io.github.tomoncle.http.domain;
 
 import com.alibaba.fastjson.JSONObject;
+import okhttp3.FormBody;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * 项目地址：<a href="https://github.com/tomoncle/http-requests">项目地址</a>
@@ -28,11 +34,11 @@ import com.alibaba.fastjson.JSONObject;
  * @apiNote 使用说明。
  * @since JDK1.8
  */
-public class HttpMap {
+public class RequestData {
     private final JSONObject value;
     private final DataType dataType;
 
-    private HttpMap(JSONObject value, DataType dataType) {
+    private RequestData(JSONObject value, DataType dataType) {
         this.value = value;
         this.dataType = dataType;
     }
@@ -42,7 +48,7 @@ public class HttpMap {
     }
 
     public static void main(String[] args) {
-        HttpMap.builder(DataType.BODY).build();
+        RequestData.builder(DataType.BODY).build();
     }
 
     public JSONObject getValue() {
@@ -53,6 +59,32 @@ public class HttpMap {
         return dataType;
     }
 
+    private FormBody formBody(Map<String, Object> map) {
+        FormBody.Builder builder = new FormBody.Builder();
+        for (String name : map.keySet()) {
+            builder.add(name, map.get(name).toString());
+        }
+        return builder.build();
+    }
+
+    private RequestBody buildRequestBody(RequestData requestData) {
+        if (Objects.isNull(requestData)) {
+            requestData = RequestData.builder(DataType.BODY).build();
+        }
+        switch (requestData.getDataType()) {
+            case FORM:
+                return formBody(requestData.getValue());
+            case BODY:
+                RequestBody.create(requestData.getValue().toJSONString(), MediaType.parse("application/json; charset=utf-8"));
+            default:
+                return null;
+        }
+    }
+
+    public RequestBody toRequestBody() {
+        return buildRequestBody(this);
+    }
+
     public static class Builder {
         private final JSONObject value = new JSONObject();
         private final DataType dataType;
@@ -61,13 +93,13 @@ public class HttpMap {
             this.dataType = dataType;
         }
 
-        public Builder set(String key, Object value) {
+        public Builder setParam(String key, Object value) {
             this.value.put(key, value);
             return this;
         }
 
-        public HttpMap build() {
-            return new HttpMap(this.value, this.dataType);
+        public RequestData build() {
+            return new RequestData(this.value, this.dataType);
         }
     }
 }

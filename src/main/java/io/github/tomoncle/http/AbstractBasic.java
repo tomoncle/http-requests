@@ -16,8 +16,8 @@
 
 package io.github.tomoncle.http;
 
-import io.github.tomoncle.http.domain.HttpMap;
 import okhttp3.Headers;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
@@ -36,13 +36,13 @@ import java.io.IOException;
  */
 abstract class AbstractBasic {
     public @Nullable String request(String url) throws IOException {
-        try (ResponseBody responseBody = response(url).body()) {
+        try (Response response = this.response(url); ResponseBody responseBody = response.body()) {
             return null == responseBody ? null : responseBody.string();
         }
     }
 
     public @Nullable String request(String url, Headers headers) throws IOException {
-        try (ResponseBody responseBody = response(url, headers).body()) {
+        try (Response response = this.response(url, headers); ResponseBody responseBody = response.body()) {
             return null == responseBody ? null : responseBody.string();
         }
     }
@@ -55,5 +55,5 @@ abstract class AbstractBasic {
         return method(url, null, headers);
     }
 
-    abstract Response method(String url, HttpMap map, Headers headers) throws IOException;
+    abstract Response method(String url, RequestBody requestBody, Headers headers) throws IOException;
 }

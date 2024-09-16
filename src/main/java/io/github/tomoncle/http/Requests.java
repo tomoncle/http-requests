@@ -16,8 +16,6 @@
 
 package io.github.tomoncle.http;
 
-import io.github.tomoncle.http.domain.DataType;
-import io.github.tomoncle.http.domain.HttpMap;
 import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +26,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -73,39 +69,9 @@ public final class Requests {
     private Requests() {
     }
 
-    private static OkHttpClient getClient(String url) {
-        return client;
-    }
-
     public static void initClient(OkHttpClient okHttpClient) {
         assert Objects.nonNull(okHttpClient);
         client = okHttpClient;
-    }
-
-    private static OkHttpClient initClient() {
-        HostnameVerifier hostnameVerifier = (s, sslSession) -> true;
-        TrustManager[] trustManagers = new TrustManager[]{x509TrustManager()};
-        OkHttpClient.Builder builder = new OkHttpClient().newBuilder()
-                // 配置连接池
-                .connectionPool(new ConnectionPool(10, 60L, TimeUnit.MINUTES))
-                // .callTimeout(0, TimeUnit.SECONDS)         //完整请求超时时长，从发起到接收返回数据，默认值0，不限定
-                .connectTimeout(60, TimeUnit.SECONDS)//与服务器建立连接的时长，默认10s
-                .readTimeout(3600, TimeUnit.SECONDS) //读取服务器返回数据的时长
-                .writeTimeout(3600, TimeUnit.SECONDS)//向服务器写入数据的时长，默认10s
-                .retryOnConnectionFailure(true)  //失败重连
-                .followRedirects(false)          //重定向
-                .addInterceptor(new RequestsInterceptor());
-        try {
-            // 配置SSL证书
-            SSLContext sslContext = SSLContext.getInstance("SSL");
-            sslContext.init(null, trustManagers, new SecureRandom());
-            builder.sslSocketFactory(sslContext.getSocketFactory(), x509TrustManager())
-                    .hostnameVerifier(hostnameVerifier);
-        } catch (GeneralSecurityException e) {
-            e.printStackTrace();
-            logger.error("配置SSL证书失败! " + e);
-        }
-        return builder.build();
     }
 
     private static X509TrustManager x509TrustManager() {
@@ -125,52 +91,69 @@ public final class Requests {
         };
     }
 
-    private static Headers buildHeaders(Headers headers) {
-        return null == headers ? Requests.HEADERS : headers;
-    }
-
-    private static Request.Builder requestBuilder(String url, Headers headers) {
-        return new Request.Builder().url(url).headers(buildHeaders(headers));
-    }
-
-    private static FormBody formBody(Map<String, Object> map) {
-        FormBody.Builder builder = new FormBody.Builder();
-        for (String name : map.keySet()) {
-            builder.add(name, map.get(name).toString());
+    private static OkHttpClient initClient() {
+        HostnameVerifier hostnameVerifier = (s, sslSession) -> true;
+        TrustManager[] trustManagers = new TrustManager[]{x509TrustManager()};
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder()
+                // 配置连接池
+                .connectionPool(new ConnectionPool(10, 60L, TimeUnit.MINUTES))
+                // .callTimeout(0, TimeUnit.SECONDS)         //完整请求超时时长，从发起到接收返回数据，默认值0，不限定
+                .connectTimeout(60, TimeUnit.SECONDS)//与服务器建立连接的时长，默认10s
+                .readTimeout(3600, TimeUnit.SECONDS) //读取服务器返回数据的时长
+                .writeTimeout(3600, TimeUnit.SECONDS)//向服务器写入数据的时长，默认10s
+                .retryOnConnectionFailure(true)  //失败重连
+                .followRedirects(false)          //重定向
+                .addInterceptor(new RequestsInterceptor());
+        try {
+            // 配置SSL证书
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustManagers, new SecureRandom());
+            builder.sslSocketFactory(sslContext.getSocketFactory(), x509TrustManager()).hostnameVerifier(hostnameVerifier);
+        } catch (GeneralSecurityException e) {
+            logger.error("配置SSL证书失败!", e);
         }
         return builder.build();
     }
 
-    private static RequestBody buildRequestBody(HttpMap map) {
-        if (Objects.isNull(map)) {
-            map = HttpMap.builder(DataType.BODY).build();
-        }
-        return (map.getDataType() == DataType.FORM) ? formBody(map.getValue()) : RequestBody.create(map.getValue().toJSONString(), JSON);
+    /**
+     * 验证 headers
+     *
+     * @param headers h
+     * @return Headers
+     */
+    private static Headers buildHeaders(Headers headers) {
+        return null == headers ? Requests.HEADERS : headers;
     }
 
-    public static class Head extends AbstractTransfer {
+    /**
+     * create request builder
+     *
+     * @param url     request address
+     * @param headers headers
+     * @return Request.Builder
+     */
+    private static Request.Builder requestBuilder(String url, Headers headers) {
+        return new Request.Builder().url(url).headers(buildHeaders(headers));
+    }
+
+    public static class Head extends AbstractBasic {
         @Override
-        Response method(String url, HttpMap map, Headers headers) throws IOException {
-            return getClient(url).newCall(requestBuilder(url, headers).head().build()).execute();
+        Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
+            return client.newCall(requestBuilder(url, headers).head().build()).execute();
         }
     }
 
     public static class Get extends AbstractBasic {
         @Override
-        Response method(String url, HttpMap map, Headers headers) throws IOException {
-            return getClient(url).newCall(requestBuilder(url, headers).build()).execute();
+        Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
+            return client.newCall(requestBuilder(url, headers).build()).execute();
         }
     }
 
-    public static class Post extends AbstractTransfer implements IExpandHandler, IUploadHandler {
+    public static class Post extends AbstractTransfer implements IUploadHandler {
         @Override
-        Response method(String url, HttpMap map, Headers headers) throws IOException {
-            return getClient(url).newCall(requestBuilder(url, headers).post(buildRequestBody(map)).build()).execute();
-        }
-
-        @Override
-        public Response response(String url, byte[] bytes, Headers headers) throws IOException {
-            return getClient(url).newCall(requestBuilder(url, headers).post(RequestBody.create(bytes, OCTET_STREAM)).build()).execute();
+        Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
+            return client.newCall(requestBuilder(url, headers).post(requestBody).build()).execute();
         }
 
         @Override
@@ -196,38 +179,28 @@ public final class Requests {
                     builder.addHeader(entry.getKey(), entry.getValue());
                 }
             }
-            return getClient(url).newCall(builder.build()).execute();
+            return client.newCall(builder.build()).execute();
         }
     }
 
-    public static class Put extends AbstractTransfer implements IExpandHandler {
+    public static class Put extends AbstractTransfer {
         @Override
-        Response method(String url, HttpMap map, Headers headers) throws IOException {
-            return getClient(url).newCall(requestBuilder(url, headers).put(buildRequestBody(map)).build()).execute();
-        }
-
-        @Override
-        public Response response(String url, byte[] bytes, Headers headers) throws IOException {
-            return getClient(url).newCall(requestBuilder(url, headers).put(RequestBody.create(bytes, OCTET_STREAM)).build()).execute();
-        }
-
-        public Response upload(String url, String filePath, Headers headers) throws IOException {
-            return getClient(url).newCall(requestBuilder(url, headers).put(RequestBody.create(Files.readAllBytes(Paths.get(filePath)))).build()).execute();
+        Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
+            return client.newCall(requestBuilder(url, headers).put(requestBody).build()).execute();
         }
     }
 
     public static class Patch extends AbstractTransfer {
         @Override
-        Response method(String url, HttpMap map, Headers headers) throws IOException {
-            return getClient(url).newCall(requestBuilder(url, headers).patch(buildRequestBody(map)).build()).execute();
+        Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
+            return client.newCall(requestBuilder(url, headers).patch(requestBody).build()).execute();
         }
     }
 
     public static class Delete extends AbstractTransfer {
         @Override
-        Response method(String url, HttpMap map, Headers headers) throws IOException {
-            return getClient(url).newCall(requestBuilder(url, headers).delete(buildRequestBody(map)).build()).execute();
+        Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
+            return client.newCall(requestBuilder(url, headers).delete(requestBody).build()).execute();
         }
     }
-
 }
