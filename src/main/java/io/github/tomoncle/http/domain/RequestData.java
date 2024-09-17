@@ -75,7 +75,7 @@ public class RequestData {
             case FORM:
                 return formBody(requestData.getValue());
             case BODY:
-                RequestBody.create(requestData.getValue().toJSONString(), MediaType.parse("application/json; charset=utf-8"));
+                return RequestBody.create(requestData.getValue().toJSONString(), MediaType.parse("application/json; charset=utf-8"));
             default:
                 return null;
         }

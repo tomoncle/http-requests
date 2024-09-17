@@ -153,7 +153,7 @@ public final class Requests {
     public static class Post extends AbstractTransfer implements IUploadHandler {
         @Override
         Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
-            return client.newCall(requestBuilder(url, headers).post(requestBody).build()).execute();
+            return client.newCall(requestBuilder(url, headers).post(super.getDefaultRequestBody(requestBody)).build()).execute();
         }
 
         @Override
@@ -186,21 +186,21 @@ public final class Requests {
     public static class Put extends AbstractTransfer {
         @Override
         Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
-            return client.newCall(requestBuilder(url, headers).put(requestBody).build()).execute();
+            return client.newCall(requestBuilder(url, headers).put(super.getDefaultRequestBody(requestBody)).build()).execute();
         }
     }
 
     public static class Patch extends AbstractTransfer {
         @Override
         Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
-            return client.newCall(requestBuilder(url, headers).patch(requestBody).build()).execute();
+            return client.newCall(requestBuilder(url, headers).patch(super.getDefaultRequestBody(requestBody)).build()).execute();
         }
     }
 
     public static class Delete extends AbstractTransfer {
         @Override
         Response method(String url, RequestBody requestBody, Headers headers) throws IOException {
-            return client.newCall(requestBuilder(url, headers).delete(requestBody).build()).execute();
+            return client.newCall(requestBuilder(url, headers).delete(super.getDefaultRequestBody(requestBody)).build()).execute();
         }
     }
 }

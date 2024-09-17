@@ -24,6 +24,7 @@ import okhttp3.ResponseBody;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * 项目地址：<a href="https://github.com/tomoncle/http-requests">项目地址</a>
@@ -66,6 +67,10 @@ abstract class AbstractTransfer extends AbstractBasic {
 
     Response method(String url, RequestData requestData, Headers headers) throws IOException {
         return method(url, requestData.toRequestBody(), headers);
+    }
+
+    RequestBody getDefaultRequestBody(RequestBody requestBody) {
+        return Objects.isNull(requestBody) ? RequestBody.create("".getBytes()) : requestBody;
     }
 
 }
