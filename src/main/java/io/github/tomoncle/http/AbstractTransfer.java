@@ -16,7 +16,7 @@
 
 package io.github.tomoncle.http;
 
-import io.github.tomoncle.http.domain.RequestData;
+import io.github.tomoncle.http.domain.SimpleRequestBody;
 import okhttp3.Headers;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -37,24 +37,24 @@ import java.util.Objects;
  * @since JDK1.8
  */
 abstract class AbstractTransfer extends AbstractBasic {
-    public @Nullable String request(String url, RequestData requestData) throws IOException {
-        try (Response response = this.response(url, requestData); ResponseBody body = response.body()) {
+    public @Nullable String request(String url, SimpleRequestBody simpleRequestBody) throws IOException {
+        try (Response response = this.response(url, simpleRequestBody); ResponseBody body = response.body()) {
             return body != null ? body.string() : "";
         }
     }
 
-    public @Nullable String request(String url, RequestData requestData, Headers headers) throws IOException {
-        try (Response response = this.response(url, requestData, headers); ResponseBody body = response.body()) {
+    public @Nullable String request(String url, SimpleRequestBody simpleRequestBody, Headers headers) throws IOException {
+        try (Response response = this.response(url, simpleRequestBody, headers); ResponseBody body = response.body()) {
             return body != null ? body.string() : "";
         }
     }
 
-    public Response response(String url, RequestData requestData, Headers headers) throws IOException {
-        return method(url, requestData, headers);
+    public Response response(String url, SimpleRequestBody simpleRequestBody, Headers headers) throws IOException {
+        return method(url, simpleRequestBody, headers);
     }
 
-    public Response response(String url, RequestData requestData) throws IOException {
-        return response(url, requestData, null);
+    public Response response(String url, SimpleRequestBody simpleRequestBody) throws IOException {
+        return response(url, simpleRequestBody, null);
     }
 
     public Response response(String url, RequestBody requestBody, Headers headers) throws IOException {
@@ -65,8 +65,8 @@ abstract class AbstractTransfer extends AbstractBasic {
         return response(url, requestBody, null);
     }
 
-    Response method(String url, RequestData requestData, Headers headers) throws IOException {
-        return method(url, requestData.toRequestBody(), headers);
+    Response method(String url, SimpleRequestBody simpleRequestBody, Headers headers) throws IOException {
+        return method(url, simpleRequestBody.toRequestBody(), headers);
     }
 
     RequestBody getDefaultRequestBody(RequestBody requestBody) {

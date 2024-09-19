@@ -34,11 +34,11 @@ import java.util.Objects;
  * @apiNote 使用说明。
  * @since JDK1.8
  */
-public class RequestData {
+public class SimpleRequestBody {
     private final JSONObject value;
     private final DataType dataType;
 
-    private RequestData(JSONObject value, DataType dataType) {
+    private SimpleRequestBody(JSONObject value, DataType dataType) {
         this.value = value;
         this.dataType = dataType;
     }
@@ -48,7 +48,7 @@ public class RequestData {
     }
 
     public static void main(String[] args) {
-        RequestData.builder(DataType.BODY).build();
+        SimpleRequestBody.builder(DataType.BODY).build();
     }
 
     public JSONObject getValue() {
@@ -67,15 +67,15 @@ public class RequestData {
         return builder.build();
     }
 
-    private RequestBody buildRequestBody(RequestData requestData) {
-        if (Objects.isNull(requestData)) {
-            requestData = RequestData.builder(DataType.BODY).build();
+    private RequestBody buildRequestBody(SimpleRequestBody simpleRequestBody) {
+        if (Objects.isNull(simpleRequestBody)) {
+            simpleRequestBody = SimpleRequestBody.builder(DataType.BODY).build();
         }
-        switch (requestData.getDataType()) {
+        switch (simpleRequestBody.getDataType()) {
             case FORM:
-                return formBody(requestData.getValue());
+                return formBody(simpleRequestBody.getValue());
             case BODY:
-                return RequestBody.create(requestData.getValue().toJSONString(), MediaType.parse("application/json; charset=utf-8"));
+                return RequestBody.create(simpleRequestBody.getValue().toJSONString(), MediaType.parse("application/json; charset=utf-8"));
             default:
                 return null;
         }
@@ -98,8 +98,8 @@ public class RequestData {
             return this;
         }
 
-        public RequestData build() {
-            return new RequestData(this.value, this.dataType);
+        public SimpleRequestBody build() {
+            return new SimpleRequestBody(this.value, this.dataType);
         }
     }
 }

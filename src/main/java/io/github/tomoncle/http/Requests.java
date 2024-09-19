@@ -16,6 +16,7 @@
 
 package io.github.tomoncle.http;
 
+import io.github.tomoncle.http.domain.ProgressRequestBody;
 import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,7 +168,7 @@ public final class Requests {
             if (Objects.isNull(filename)) {
                 filename = file.getName();
             }
-            MultipartBody.Builder formDataPart = new MultipartBody.Builder().setType(Objects.requireNonNull(FORM_DATA)).addFormDataPart("file", filename, RequestBody.create(file, FORM_DATA));
+            MultipartBody.Builder formDataPart = new MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("file", filename, new ProgressRequestBody(RequestBody.create(file, FORM_DATA), String.format("文件 %s ", filename)));
             if (Objects.nonNull(data)) {
                 for (Map.Entry<String, String> entry : data.entrySet()) {
                     formDataPart.addFormDataPart(entry.getKey(), entry.getValue());

@@ -44,36 +44,39 @@ public class ProgressRequestBody extends RequestBody {
     private static final Logger logger = LoggerFactory.getLogger(ProgressRequestBody.class);
     private final RequestBody requestBody;
     private final ProgressListener listener;
+    private final String logPrompt;
 
-    public ProgressRequestBody(RequestBody requestBody, ProgressListener listener) {
+    public ProgressRequestBody(RequestBody requestBody, ProgressListener listener, String logPrompt) {
         this.requestBody = requestBody;
         this.listener = listener;
+        this.logPrompt = getDefaultValue(logPrompt);
     }
 
-    public ProgressRequestBody(RequestBody requestBody) {
+    public ProgressRequestBody(RequestBody requestBody, String logPrompt) {
         this.requestBody = requestBody;
+        this.logPrompt = getDefaultValue(logPrompt);
         this.listener = new ProgressListener() {
             private long lastUpdateTime = System.currentTimeMillis();
             private long lastBytesWritten = 0L;
 
             @Override
-            public void onProgressUpdate(long bytesWritten, long contentLength, boolean done) {
+            public void onProgressUpdate(long bytesWritten, long contentLength, boolean done, String logPrompt) {
                 float percentage = Float.parseFloat(String.valueOf(bytesWritten)) / contentLength;
                 DecimalFormat df = new DecimalFormat("0.00%");
                 String progress = df.format(percentage);
                 long currentTime = System.currentTimeMillis();
                 long timeElapsed = currentTime - lastUpdateTime;
-                if (timeElapsed > 0) {
+                if (timeElapsed > 1000 || done) {
                     long bytesUploaded = bytesWritten - lastBytesWritten;
                     DecimalFormat dfs = new DecimalFormat("0.00 MB/s");
-                    float speedPerSec = (float) (bytesUploaded/1024.0/1024.0 / (timeElapsed / 1000.0));
+                    float speedPerSec = (float) (bytesUploaded / 1024.0 / 1024.0 / (timeElapsed / 1000.0));
                     String speed = dfs.format(speedPerSec);
                     lastBytesWritten = bytesWritten;
                     lastUpdateTime = currentTime;
-                    logger.debug("上传进度: {}, 当前速度: {}", progress, speed);
+                    logger.debug("{}上传进度: {}, 当前速度: {}", logPrompt, progress, speed);
                 }
-                if(done){
-                    logger.debug("上传完成!");
+                if (done) {
+                    logger.debug("{}上传完成!", logPrompt);
                 }
             }
         };
@@ -82,6 +85,10 @@ public class ProgressRequestBody extends RequestBody {
     @Override
     public MediaType contentType() {
         return requestBody.contentType();
+    }
+
+    private String getDefaultValue(String val) {
+        return val != null && !val.isEmpty() ? val : "";
     }
 
     @Override
@@ -97,11 +104,12 @@ public class ProgressRequestBody extends RequestBody {
     public void writeTo(@NotNull BufferedSink sink) throws IOException {
         BufferedSink bufferedSink = Okio.buffer(new ForwardingSink(sink) {
             long bytesWritten = 0L;
+
             @Override
             public void write(@NotNull Buffer source, long byteCount) throws IOException {
                 super.write(source, byteCount);
                 bytesWritten += byteCount;
-                listener.onProgressUpdate(bytesWritten, contentLength(), bytesWritten == contentLength());
+                listener.onProgressUpdate(bytesWritten, contentLength(), bytesWritten == contentLength(), logPrompt);
             }
         });
         requestBody.writeTo(bufferedSink);

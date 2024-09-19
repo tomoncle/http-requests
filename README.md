@@ -7,6 +7,7 @@
 * 1.在项目pom.xml添加仓库
 
 ```xml
+
 <repositories>
     <repository>
         <id>github</id>
@@ -19,6 +20,7 @@
 * 2.引入依赖
 
 ```xml
+
 <dependency>
     <groupId>io.github.tomoncle</groupId>
     <artifactId>http-requests</artifactId>
@@ -53,14 +55,14 @@ public class TestRequests {
         Map<String, String> header = new HashMap<>();
         header.put("Cookies", "abc");
         // set body
-        HttpMap bodyMap = HttpMap.builder(DataType.FORM)
-                .set("username", "tomoncle")
+        SimpleRequestBody requestBody = SimpleRequestBody.builder(DataType.FORM)
+                .setParam("username", "tomoncle")
                 .build();
         // return json or text
-        String request = Requests.POST.request(url, bodyMap, Headers.of(header));
+        String request = Requests.POST.request(url, requestBody, Headers.of(header));
         assert request != null;
         // return Response
-        Response response = Requests.POST.response(url, bodyMap, Headers.of(header));
+        Response response = Requests.POST.response(url, requestBody, Headers.of(header));
         assert response.code() == 200;
         response.close();
     }
